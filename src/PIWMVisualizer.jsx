@@ -232,7 +232,7 @@ function canvasToCHWFloat(smallCanvas) {
   return chw;
 }
 
-export default function LatentRolloutVisualizer() {
+export default function PIWMVisualizer() {
   // ONNX sessions
   const [encoderSession, setEncoderSession] = useState(null);
   const [decoderSession, setDecoderSession] = useState(null);
@@ -380,60 +380,17 @@ export default function LatentRolloutVisualizer() {
   const disabled = loading || !encoderSession || !decoderSession || !lstmSession;
 
   return (
+    <div style={{ padding: 16, fontFamily: "sans-serif" }}>
+      <h2>LSTM + Ground Truth (Python-matched renderer)</h2>
 
-    <div>
-      <div>
-        <h2>LSTM</h2>
+      {loading && <p>Loading ONNX models…</p>}
+      {error && <p style={{ color: "red", whiteSpace: "pre-wrap" }}>Error: {error}</p>}
 
-        {loading && <p>Loading ONNX models…</p>}
-        {error && <p style={{ color: "red", whiteSpace: "pre-wrap" }}>Error: {error}</p>}
-      </div>
-      <div style={{ padding: 16, fontFamily: "sans-serif", display: "flex", flexDirection: "row" }}>
+      <div style={{ display: "flex", gap: 32, alignItems: "flex-start" }}>
+        {/* LEFT: Ground truth */}
+        <div>
+          <h3>Ground Truth</h3>
 
-
-        <div style={{ display: "flex", gap: 32, alignItems: "flex-start", flexDirection: "column" }}>
-          {/* LEFT: Ground truth */}
-          <div>
-            <h3>Ground Truth</h3>
-            {/* offscreen render canvases */}
-            <canvas ref={gtRenderCanvasRef} width={RENDER_W} height={RENDER_H} style={{ display: "none" }} />
-            <canvas ref={gtSmallCanvasRef} width={IMG_W} height={IMG_H} style={{ display: "none" }} />
-
-            {/* visible upscaled */}
-            <p style={{ color: "#666", marginTop: 12 }}>Observation (96×96 upscaled)</p>
-            <canvas
-              ref={gtBigCanvasRef}
-              width={IMG_W * SCALE}
-              height={IMG_H * SCALE}
-              style={{
-                width: `${IMG_W * SCALE}px`,
-                height: `${IMG_H * SCALE}px`,
-                imageRendering: "pixelated",
-                border: "1px solid #ccc",
-                backgroundColor: "#000",
-              }}
-            />
-
-            <div style={{ marginTop: 12, display: "flex", gap: 10 }}>
-              <button
-                onClick={() => setGtState({ x: 0, xDot: 0, theta: 0, thetaDot: 0 })}
-                style={{ padding: "8px 12px", fontSize: 18 }}
-              >
-                Reset GT
-              </button>
-              <button
-                onClick={syncGTToLatent}
-                disabled={disabled}
-                style={{ padding: "8px 12px", fontSize: 18 }}
-              >
-                Sync GT image → latent
-              </button>
-            </div>
-
-            <div style={{ marginTop: 10, fontSize: 12, color: "#666" }}>
-              GT full state: (x={gtState.x.toFixed(2)}, xDot={gtState.xDot.toFixed(2)}, θ={gtState.theta.toFixed(2)}, θDot={gtState.thetaDot.toFixed(2)})
-            </div>
-          </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
             <div>
               <label style={{ display: "block", fontFamily: "monospace" }}>
@@ -473,16 +430,15 @@ export default function LatentRolloutVisualizer() {
               />
             </div>
           </div>
-        </div>
 
-        {/* RIGHT: LSTM */}
-        <div style={{ marginLeft: "100px", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 12 }}>
+          {/* offscreen render canvases */}
+          <canvas ref={gtRenderCanvasRef} width={RENDER_W} height={RENDER_H} style={{ display: "none" }} />
+          <canvas ref={gtSmallCanvasRef} width={IMG_W} height={IMG_H} style={{ display: "none" }} />
 
-          <h3 style={{ padding: 16, margin: 0 }}>LSTM Latent Rollout</h3>
-          <p style={{ color: "#666", margin: 0 }}>Decoded image (latent)</p>
-          <canvas ref={latentSmallCanvasRef} width={IMG_W} height={IMG_H} style={{ display: "none" }} />
+          {/* visible upscaled */}
+          <p style={{ color: "#666", marginTop: 12 }}>Observation (96×96 upscaled)</p>
           <canvas
-            ref={latentBigCanvasRef}
+            ref={gtBigCanvasRef}
             width={IMG_W * SCALE}
             height={IMG_H * SCALE}
             style={{
@@ -494,33 +450,31 @@ export default function LatentRolloutVisualizer() {
             }}
           />
 
-          <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+          <div style={{ marginTop: 12, display: "flex", gap: 10 }}>
             <button
-              onClick={() => stepWithAction(0)}
-              disabled={disabled}
+              onClick={() => setGtState({ x: 0, xDot: 0, theta: 0, thetaDot: 0 })}
               style={{ padding: "8px 12px", fontSize: 18 }}
             >
-              Action: Left
+              Reset GT
             </button>
             <button
-              onClick={() => stepWithAction(1)}
+              onClick={syncGTToLatent}
               disabled={disabled}
               style={{ padding: "8px 12px", fontSize: 18 }}
             >
-              Action: Right
+              Sync GT image → latent
             </button>
           </div>
 
-          <button
-            onClick={() => {
-              setLatent(Array(LATENT_DIM).fill(0));
-              setHData(null);
-              setCData(null);
-            }}
-            style={{ padding: "8px 12px", fontSize: 18 }}
-          >
-            Reset latent & hidden
-          </button>
+          <div style={{ marginTop: 10, fontSize: 12, color: "#666" }}>
+            GT full state: (x={gtState.x.toFixed(2)}, xDot={gtState.xDot.toFixed(2)}, θ={gtState.theta.toFixed(2)}, θDot={gtState.thetaDot.toFixed(2)})
+          </div>
+        </div>
+
+        {/* RIGHT: LSTM */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <h3 style={{ margin: 0 }}>LSTM Latent Rollout</h3>
+
           <div
             style={{
               display: "grid",
@@ -556,6 +510,49 @@ export default function LatentRolloutVisualizer() {
               </div>
             ))}
           </div>
+
+          <p style={{ color: "#666", margin: 0 }}>Decoded image (latent)</p>
+          <canvas ref={latentSmallCanvasRef} width={IMG_W} height={IMG_H} style={{ display: "none" }} />
+          <canvas
+            ref={latentBigCanvasRef}
+            width={IMG_W * SCALE}
+            height={IMG_H * SCALE}
+            style={{
+              width: `${IMG_W * SCALE}px`,
+              height: `${IMG_H * SCALE}px`,
+              imageRendering: "pixelated",
+              border: "1px solid #ccc",
+              backgroundColor: "#000",
+            }}
+          />
+
+          <div style={{ display: "flex", gap: 10 }}>
+            <button
+              onClick={() => stepWithAction(0)}
+              disabled={disabled}
+              style={{ padding: "8px 12px", fontSize: 18 }}
+            >
+              Action: Left
+            </button>
+            <button
+              onClick={() => stepWithAction(1)}
+              disabled={disabled}
+              style={{ padding: "8px 12px", fontSize: 18 }}
+            >
+              Action: Right
+            </button>
+          </div>
+
+          <button
+            onClick={() => {
+              setLatent(Array(LATENT_DIM).fill(0));
+              setHData(null);
+              setCData(null);
+            }}
+            style={{ padding: "8px 12px", fontSize: 18 }}
+          >
+            Reset latent & hidden
+          </button>
         </div>
       </div>
     </div>
