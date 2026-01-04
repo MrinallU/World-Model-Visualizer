@@ -1,19 +1,19 @@
 import React, { useMemo, useRef, useState } from "react";
 
-import { useOrtRuntime } from "./hooks/useOrtRuntime";
-import { useRunQueue } from "./hooks/useRunQueue";
-import { useVaeDecoderOnly } from "./hooks/useVaeDecoderOnly";
-import { useVaeDecode } from "./hooks/useVaeDecode";
+import { useOrtRuntime } from "../hooks/useOrtRuntime";
+import { useRunQueue } from "../hooks/useRunQueue";
+import { useVaeDecoderOnly } from "../hooks/useVaeDecoderOnly";
+import { useVaeDecode } from "../hooks/useVaeDecode";
 
-import { IMG_H, IMG_W } from "./utils/canvas";
+import { IMG_H, IMG_W } from "../utils/canvas";
 
-import { useUiTheme } from "./components/theme";
-import { Card, CardTitleRow } from "./components/Card";
-import { Button } from "./components/Button";
-import { Dot } from "./components/Pill";
-import { CanvasFrame } from "./components/CanvasFrame";
-import { PageHeader } from "./components/PageHeader";
-import { SliderGrid } from "./components/SliderGrid";
+import { useUiTheme } from "../components/theme";
+import { Card, CardTitleRow } from "../components/Card";
+import { Button } from "../components/Button";
+import { Dot } from "../components/Pill";
+import { CanvasFrame } from "../components/CanvasFrame";
+import { PageHeader } from "../components/PageHeader";
+import { SliderGrid } from "../components/SliderGrid";
 
 const LATENT_DIM = 16;
 const SCALE = 4;
@@ -109,7 +109,7 @@ export default function VaeLatentVisualizer() {
 
       {error && <div style={styles.err}>Error: {error}</div>}
 
-      <div style={{ ...styles.grid, gridTemplateColumns: "1fr 1fr" }}>
+      <div style={{ ...styles.grid, gridTemplateColumns: "repeat(auto-fit, minmax(520px, 1fr))" }}>
         {/* ===================== Controls ===================== */}
         <Card style={styles.card}>
           <CardTitleRow style={styles.titleRow}>

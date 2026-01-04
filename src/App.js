@@ -8,13 +8,13 @@ import {
   useLocation,
 } from "react-router-dom";
 
-import VaeLatentVisualizer from "./VaeLatentVisualizer";
-import StateLatentVisualizer from "./StateLatentVisualizer";
-import LatentRolloutVisualizer from "./LatentRolloutVisualizer";
-import SemiInterpretableVisualizer from "./SemiInterpretableVisualizer";
-import PIWMVisualizer from "./PIWMVisualizer";
-import Guide from "./Guide";
-import Home from "./Home";
+import VaeLatentVisualizer from "./pages/VaeLatentVisualizer";
+import StateLatentVisualizer from "./pages/StateLatentVisualizer";
+import LatentRolloutVisualizer from "./pages/LatentRolloutVisualizer";
+import SemiInterpretableVisualizer from "./pages/SemiInterpretableVisualizer";
+import PIWMVisualizer from "./pages/PIWMVisualizer";
+import Guide from "./pages/Guide";
+import Home from "./pages/Home";
 
 import { useUiTheme } from "./components/theme";
 

@@ -1,19 +1,24 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import * as ort from "onnxruntime-web";
 
-import { useUiTheme } from "./components/theme";
-import { Card, CardTitleRow } from "./components/Card";
-import { Button } from "./components/Button";
-import { Dot } from "./components/Pill";
-import { CanvasFrame } from "./components/CanvasFrame";
-import { SliderGrid } from "./components/SliderGrid";
-import { PageHeader } from "./components/PageHeader";
+import { useOrtRuntime } from "../hooks/useOrtRuntime";
+import { useRunQueue } from "../hooks/useRunQueue";
+
+import { useUiTheme } from "../components/theme";
+import { Card, CardTitleRow } from "../components/Card";
+import { Button } from "../components/Button";
+import { Dot } from "../components/Pill";
+import { CanvasFrame } from "../components/CanvasFrame";
+import { SliderGrid } from "../components/SliderGrid";
+import { PageHeader } from "../components/PageHeader";
 
 const STATE_DIM = 4;
 const IMG_H = 96;
 const IMG_W = 96;
 const SCALE = 4;
 
+// If you centralized this already, delete this function and do:
+// import { drawCHWFloatToCanvases } from "../utils/canvas";
 function drawCHWFloatToCanvases(chwData, smallCanvas, bigCanvas) {
   const sctx = smallCanvas.getContext("2d");
   const imageData = sctx.createImageData(IMG_W, IMG_H);
@@ -41,6 +46,12 @@ function drawCHWFloatToCanvases(chwData, smallCanvas, bigCanvas) {
 }
 
 export default function SemiInterpretableVisualizer() {
+  // ---- ORT runtime config (consistent across pages) ----
+  useOrtRuntime();
+
+  // IMPORTANT: ONE global queue for ORT runs (prevents overlap issues)
+  const ortQueueRef = useRunQueue();
+
   // ---- theme ----
   const styles = useUiTheme({ imgW: IMG_W, imgH: IMG_H, scale: SCALE });
 
@@ -81,14 +92,13 @@ export default function SemiInterpretableVisualizer() {
     };
   }, []);
 
-  // Run inference whenever sliders change
+  // Run inference whenever sliders change (serialized via queue)
   useEffect(() => {
     let alive = true;
 
     async function runInference() {
       if (!session || !smallCanvasRef.current || !bigCanvasRef.current) return;
 
-      // Build state vector: [pos, vel, angle, angle_vel]
       const stateArr = new Float32Array(STATE_DIM);
       stateArr[0] = position;
       stateArr[1] = 0;
@@ -98,11 +108,17 @@ export default function SemiInterpretableVisualizer() {
       const stateTensor = new ort.Tensor("float32", stateArr, [1, STATE_DIM]);
 
       try {
-        const outputs = await session.run({ state: stateTensor });
-        if (!alive) return;
+        const run = async () => {
+          const outputs = await session.run({ state: stateTensor });
+          if (!alive) return;
 
-        const xRecon = outputs["x_recon"]; // [1, 3, 96, 96]
-        drawCHWFloatToCanvases(xRecon.data, smallCanvasRef.current, bigCanvasRef.current);
+          const xRecon = outputs["x_recon"]; // [1, 3, 96, 96]
+          drawCHWFloatToCanvases(xRecon.data, smallCanvasRef.current, bigCanvasRef.current);
+        };
+
+        const q = ortQueueRef?.current;
+        if (q) await q(run);
+        else await run();
       } catch (e) {
         console.error(e);
         if (!alive) return;
@@ -114,7 +130,7 @@ export default function SemiInterpretableVisualizer() {
     return () => {
       alive = false;
     };
-  }, [session, position, angle]);
+  }, [session, position, angle, ortQueueRef]);
 
   const resetState = () => {
     setPosition(0);
@@ -141,8 +157,8 @@ export default function SemiInterpretableVisualizer() {
         subtitle={subtitle}
         callout={
           <>
-            <b>Tip:</b> position/angle are fed into the state vector with velocity terms set to 0. Use{" "}
-            <b>Reset</b> to return to the origin quickly.
+            <b>Tip:</b> position/angle are fed into the state vector with velocity terms set to 0. Use <b>Reset</b> to
+            return to the origin quickly.
           </>
         }
       />
@@ -156,12 +172,7 @@ export default function SemiInterpretableVisualizer() {
 
       {error && <div style={styles.err}>Error: {error}</div>}
 
-      <div
-        style={{
-          ...styles.grid,
-          gridTemplateColumns: "1fr 1fr", // 2-col layout for this visualizer
-        }}
-      >
+      <div style={{ ...styles.grid, gridTemplateColumns: "repeat(auto-fit, minmax(520px, 1fr))" }}>
         {/* ===================== Controls ===================== */}
         <Card style={styles.card}>
           <CardTitleRow style={styles.titleRow}>
@@ -171,10 +182,9 @@ export default function SemiInterpretableVisualizer() {
                 <div style={{ fontWeight: 850, letterSpacing: -0.2 }}>State controls</div>
                 <div style={styles.smallText}>Decoder input: (pos, vel=0, angle, angleVel=0)</div>
               </div>
-
             </div>
 
-            <Button variant="danger" styles={styles} onClick={resetState}>
+            <Button variant="danger" styles={styles} onClick={resetState} disabled={disabled}>
               Reset
             </Button>
           </CardTitleRow>
@@ -182,7 +192,6 @@ export default function SemiInterpretableVisualizer() {
           <div style={styles.sliderWrap}>
             <SliderGrid
               styles={styles}
-              // “compact / generic” usage: no header, just sliders
               title={null}
               description={null}
               columns={2}
@@ -223,7 +232,8 @@ export default function SemiInterpretableVisualizer() {
                 <div style={styles.smallText}>Model output: x_recon (CHW → canvas)</div>
               </div>
             </div>
-            <Button variant="danger" styles={styles} onClick={resetState}>
+
+            <Button variant="danger" styles={styles} onClick={resetState} disabled={disabled}>
               Reset State
             </Button>
           </CardTitleRow>
@@ -238,8 +248,6 @@ export default function SemiInterpretableVisualizer() {
             height={IMG_H * SCALE}
             style={styles.canvasFrame}
           />
-
-
         </Card>
       </div>
     </div>

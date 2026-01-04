@@ -83,16 +83,16 @@ const S = {
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    padding: "0 14px",
+    padding: "0 15px",
     boxShadow: "0 10px 18px rgba(15,23,42,0.05)",
-    width: "fit-content",
+    maxWidth: "fit-content"
   }),
   dotBoxText: {
     fontWeight: 950,
     letterSpacing: -0.25,
     fontSize: 14,
     color: "#0f172a",
-    whiteSpace: "nowrap",
+    maxWidth: "fit-content"
   },
 
   desc: { margin: 0, color: "#334155", fontSize: 13.5, lineHeight: 1.55 },

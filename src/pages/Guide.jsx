@@ -1,5 +1,6 @@
+import React, { useEffect, useMemo, useState } from "react";
 
-import React, { useMemo } from "react";
+const BREAKPOINT = 920; // when stacked, TOC becomes non-sticky
 
 const S = {
   page: {
@@ -35,7 +36,12 @@ const S = {
   brandTitle: { fontWeight: 750, letterSpacing: -0.3, margin: 0, fontSize: 16 },
   brandSub: { margin: 0, color: "#64748b", fontSize: 13 },
 
-  pillRow: { display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "flex-end" },
+  pillRow: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 8,
+    justifyContent: "flex-end",
+  },
   pill: {
     display: "inline-flex",
     alignItems: "center",
@@ -75,25 +81,28 @@ const S = {
     maxWidth: 1200,
   },
 
-  // ✅ Wider main layout: fixed nav width, main gets the rest
+  // ✅ Flex layout that wraps (nav stacks above main on narrow screens)
   layout: {
-    display: "grid",
-    gridTemplateColumns: "280px 1fr",
+    display: "flex",
     gap: 20,
     marginTop: 16,
-    alignItems: "start",
+    alignItems: "flex-start",
+    flexWrap: "wrap",
   },
 
-  nav: {
-    position: "sticky",
-    top: 16,
-    alignSelf: "start",
+  // Base nav styles; we'll override position/top dynamically
+  navBase: {
+    alignSelf: "flex-start",
     borderRadius: 16,
     border: "1px solid rgba(15,23,42,0.08)",
     background: "rgba(255,255,255,0.82)",
     boxShadow: "0 12px 24px rgba(15,23,42,0.05)",
     padding: 14,
+
+    flex: "0 0 280px",
+    maxWidth: "100%",
   },
+
   navTitle: {
     margin: "0 0 10px 0",
     fontSize: 12,
@@ -114,7 +123,14 @@ const S = {
   },
   navLinkMuted: { color: "#334155" },
 
-  main: { display: "flex", flexDirection: "column", gap: 16 },
+  main: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 16,
+
+    flex: "1 1 560px",
+    minWidth: 0, // prevents overflow from long code/tables
+  },
 
   card: {
     borderRadius: 16,
@@ -152,7 +168,12 @@ const S = {
       "linear-gradient(180deg, rgba(244,63,94,0.09), rgba(244,63,94,0.03))",
   },
   calloutTitle: { margin: 0, fontWeight: 750, fontSize: 14, color: "#0b1220" },
-  calloutText: { margin: "6px 0 0 0", fontSize: 14, color: "#334155", lineHeight: 1.65 },
+  calloutText: {
+    margin: "6px 0 0 0",
+    fontSize: 14,
+    color: "#334155",
+    lineHeight: 1.65,
+  },
 
   grid2: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 10 },
   grid3: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginTop: 10 },
@@ -251,6 +272,21 @@ const S = {
   },
 };
 
+function useIsNarrow(breakpoint = BREAKPOINT) {
+  const [isNarrow, setIsNarrow] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth < breakpoint;
+  });
+
+  useEffect(() => {
+    const onResize = () => setIsNarrow(window.innerWidth < breakpoint);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [breakpoint]);
+
+  return isNarrow;
+}
+
 function Anchor({ id, title, children }) {
   return (
     <section id={id} style={S.card}>
@@ -322,6 +358,18 @@ export default function Guide() {
     []
   );
 
+  const isNarrow = useIsNarrow(BREAKPOINT);
+
+  // ✅ Sticky only when side-by-side; non-sticky when stacked
+  const navStyle = useMemo(
+    () => ({
+      ...S.navBase,
+      position: isNarrow ? "relative" : "sticky",
+      top: isNarrow ? 0 : 16,
+    }),
+    [isNarrow]
+  );
+
   return (
     <div style={S.page}>
       <div style={S.container}>
@@ -358,8 +406,9 @@ export default function Guide() {
         <div style={S.hero}>
           <h1 style={S.h1}>How to Use the Visualizers</h1>
           <p style={S.heroP}>
-            This page explains <b>what each panel means</b>, <b>what each button actually does</b>,
-            and <b>how to run a clean comparison</b> between: the physics-based ground truth renderer,
+            This page explains <b>what each panel means</b>,{" "}
+            <b>what each button actually does</b>, and{" "}
+            <b>how to run a clean comparison</b> between: the physics-based ground truth renderer,
             a VAE latent space, an LSTM latent transition model, and PIWM’s learned state/image modules.
           </p>
           <div style={S.callout}>
@@ -377,21 +426,22 @@ export default function Guide() {
         {/* Layout */}
         <div style={S.layout}>
           {/* Nav */}
-          <aside style={S.nav}>
+          <aside style={navStyle}>
             <div style={S.navTitle}>On this page</div>
             {nav.map((n) => (
               <a key={n.id} href={`#${n.id}`} style={S.navLink}>
                 <span style={S.navLinkMuted}>{n.label}</span>
               </a>
             ))}
-
           </aside>
 
           {/* Main */}
           <main style={S.main}>
             <Anchor id="overview" title="Overview">
               <h2 style={S.h2}>What the system is doing</h2>
-              <p style={S.p}>This system visualizes the dynamics of OpenAI's cartpole model. The visualizer allows the user to compare and contrast the predictive abilities of our developed models with the ground truth state when actions are applied to the model. For convenience, users can adjust ground truth state and sync to all models to analyze predictive capability in a variety of starting states.  </p>
+              <p style={S.p}>
+                This system visualizes the dynamics of OpenAI's cartpole model. The visualizer allows the user to compare and contrast the predictive abilities of our developed models with the ground truth state when actions are applied to the model. For convenience, users can adjust ground truth state and sync to all models to analyze predictive capability in a variety of starting states.
+              </p>
               <p style={S.p}>You have multiple “representations” of the same environment state:</p>
               <ul style={S.ul}>
                 <li style={S.li}>
@@ -581,7 +631,7 @@ export default function Guide() {
                   Sync first (initializes a meaningful starting <span style={S.kbd}>z</span>).
                 </li>
                 <li style={S.li}>
-                  Apply a fixed sequence of actions (e.g., Right, Right, Left, Left, …) and compare drift to PIWM/GT.
+                  Apply a fixed sequence of actions (e.g., Right, Right, Left, Left, …) and compare drift vs PIWM/GT.
                 </li>
               </ul>
 
@@ -702,7 +752,6 @@ export default function Guide() {
                   },
                 ]}
               />
-
             </Anchor>
 
             <Anchor id="interpretation" title="How to interpret results">
@@ -725,36 +774,7 @@ export default function Guide() {
                 Over many steps, models will drift. The interesting part is the <b>type</b> of drift:
                 blurring, mode collapse, delayed response to actions, or incorrect pole/cart geometry.
               </p>
-
             </Anchor>
-
-            {/* <Anchor id="pitfalls" title="Common pitfalls (what “broken” looks like)"> */}
-            {/*   <h2 style={S.h2}>Common pitfalls</h2> */}
-            {/*   <ul style={S.ul}> */}
-            {/*     <li style={S.li}> */}
-            {/*       <b>Sync updates latent numbers but image doesn’t change</b> → decode didn’t run, or you’re not drawing into */}
-            {/*       the correct canvas refs. */}
-            {/*     </li> */}
-            {/*     <li style={S.li}> */}
-            {/*       <b>Reset draws correctly but Sync causes ORT errors</b> → overlapping <span style={S.kbd}>session.run()</span> */}
-            {/*       calls or StrictMode double-invocation issues. */}
-            {/*     </li> */}
-            {/*     <li style={S.li}> */}
-            {/*       <b>PIWM state changes but image stays black</b> → decoder output name mismatch, or reading tensor via wrong field. */}
-            {/*     </li> */}
-            {/*     <li style={S.li}> */}
-            {/*       <b>GT looks correct but learned images are “huge cart” / wrong geometry</b> → dataset/normalization mismatch, */}
-            {/*       or encoder/decoder trained on different renderer settings. */}
-            {/*     </li> */}
-            {/*   </ul> */}
-
-            {/*   <div style={S.code}> */}
-            {/*     <b>Sanity checks</b> */}
-            {/*     {"\n"}• Log output keys: Object.keys(out) */}
-            {/*     {"\n"}• Always read tensors via: out[name].data */}
-            {/*     {"\n"}• Ensure your input tensor is [1,3,96,96] float32 in [0,1] */}
-            {/*   </div> */}
-            {/* </Anchor> */}
 
             <Anchor id="faq" title="FAQ">
               <h2 style={S.h2}>FAQ</h2>
@@ -775,8 +795,8 @@ export default function Guide() {
               <p style={S.p}>
                 Sync from a known GT state, then apply the same action sequence. Compare (a) short-horizon fidelity and (b) drift modes.
               </p>
-
             </Anchor>
+
             <Anchor id="ort" title="onnxruntime-web stability notes">
               <h2 style={S.h2}>onnxruntime-web stability notes (practical)</h2>
               <p style={S.p}>
@@ -812,7 +832,6 @@ export default function Guide() {
                 </li>
               </ul>
             </Anchor>
-
           </main>
         </div>
       </div>

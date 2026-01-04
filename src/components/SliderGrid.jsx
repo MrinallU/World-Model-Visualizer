@@ -1,57 +1,31 @@
 import React from "react";
 import { SliderField } from "./SliderField";
 
-/**
- * SliderGrid (dual-mode)
- *
- * Mode A (latent mode, backwards compatible):
- *   <SliderGrid styles={styles} latent={latent} onChangeLatent={(i, v)=>...} />
- *
- * Mode B (generic mode):
- *   <SliderGrid styles={styles} values={[...]} onChangeIndex={(i, v)=>...} />
- *
- * If `values` is undefined, it will use `latent`.
- * If `onChangeIndex` is undefined, it will use `onChangeLatent`.
- */
+
 export function SliderGrid({
   styles,
 
-  // ---- Mode A (legacy) ----
   latent,
   onChangeLatent,
 
-  // ---- Mode B (generic) ----
   values,
   onChangeIndex,
-
-  // ---- Header ----
   title = "Latent controls",
   description,
-
-  // ---- Layout ----
-  indices,
-  columns = 2,
   maxHeight = 520,
 
-  // ---- Per-index customization ----
+  indices,
   unusedIndices,
   labelForIndex,
   formatValue,
   rangeForIndex,
 }) {
-  // Choose data source + handler (fallbacks)
   const arr = values ?? latent ?? [];
   const onChange = onChangeIndex ?? onChangeLatent;
 
-  if (!styles) {
-    throw new Error("SliderGrid: missing `styles` prop");
-  }
-  if (!Array.isArray(arr)) {
-    throw new Error("SliderGrid: `values`/`latent` must be an array");
-  }
-  if (typeof onChange !== "function") {
-    throw new Error("SliderGrid: missing change handler (`onChangeIndex` or `onChangeLatent`)");
-  }
+  if (!styles) throw new Error("SliderGrid: missing `styles` prop");
+  if (!Array.isArray(arr)) throw new Error("SliderGrid: values/latent must be array");
+  if (typeof onChange !== "function") throw new Error("SliderGrid: missing change handler");
 
   const renderIndices = indices ?? arr.map((_, i) => i);
 
@@ -66,11 +40,17 @@ export function SliderGrid({
   const _formatValue = formatValue ?? ((v) => Number(v).toFixed(2));
   const _rangeForIndex = rangeForIndex ?? (() => ({ min: -3, max: 3, step: 0.05 }));
 
-  const shouldScroll = renderIndices.length > columns * 3; // tweak threshold as you like
+  // scrolling heuristic now independent of columns
+  const shouldScroll = renderIndices.length > 6;
 
   return (
     <div style={{ marginTop: 12, borderTop: "1px solid rgba(15,23,42,0.08)", paddingTop: 12 }}>
-      {!!title && <div style={{ fontWeight: 800, fontSize: 13.5, color: "#0f172a" }}>{title}</div>}
+      {!!title && (
+        <div style={{ fontWeight: 800, fontSize: 13.5, color: "#0f172a" }}>
+          {title}
+        </div>
+      )}
+
       {description ? (
         <div style={styles.smallText}>{description}</div>
       ) : (
@@ -82,7 +62,7 @@ export function SliderGrid({
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+          gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
           columnGap: 16,
           rowGap: 12,
           ...(shouldScroll

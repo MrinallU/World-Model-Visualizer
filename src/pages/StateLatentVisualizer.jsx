@@ -1,48 +1,33 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import * as ort from "onnxruntime-web";
 
-import { useUiTheme } from "./components/theme";
-import { Card, CardTitleRow } from "./components/Card";
-import { Button } from "./components/Button";
-import { Dot } from "./components/Pill";
-import { CanvasFrame } from "./components/CanvasFrame";
-import { PageHeader } from "./components/PageHeader";
-import { SliderGrid } from "./components/SliderGrid";
+import { useOrtRuntime } from "../hooks/useOrtRuntime";
+import { useRunQueue } from "../hooks/useRunQueue";
+
+import { useUiTheme } from "../components/theme";
+import { Card, CardTitleRow } from "../components/Card";
+import { Button } from "../components/Button";
+import { Dot } from "../components/Pill";
+import { CanvasFrame } from "../components/CanvasFrame";
+import { PageHeader } from "../components/PageHeader";
+import { SliderGrid } from "../components/SliderGrid";
+
+import { drawCHWFloatToCanvases } from "../utils/canvas";
 
 const STATE_DIM = 2;
 const IMG_H = 96;
 const IMG_W = 96;
 const SCALE = 4;
 
-function drawCHWFloatToCanvases(chwData, smallCanvas, bigCanvas) {
-  const sctx = smallCanvas.getContext("2d");
-  const imageData = sctx.createImageData(IMG_W, IMG_H);
-  const rgba = imageData.data;
-  const planeSize = IMG_H * IMG_W;
-
-  for (let i = 0; i < planeSize; i++) {
-    const r = chwData[0 * planeSize + i];
-    const g = chwData[1 * planeSize + i];
-    const b = chwData[2 * planeSize + i];
-
-    const idx = i * 4;
-    rgba[idx + 0] = Math.max(0, Math.min(255, Math.round(r * 255)));
-    rgba[idx + 1] = Math.max(0, Math.min(255, Math.round(g * 255)));
-    rgba[idx + 2] = Math.max(0, Math.min(255, Math.round(b * 255)));
-    rgba[idx + 3] = 255;
-  }
-
-  sctx.putImageData(imageData, 0, 0);
-
-  const bctx = bigCanvas.getContext("2d");
-  bctx.imageSmoothingEnabled = false;
-  bctx.clearRect(0, 0, bigCanvas.width, bigCanvas.height);
-  bctx.drawImage(smallCanvas, 0, 0, IMG_W, IMG_H, 0, 0, bigCanvas.width, bigCanvas.height);
-}
-
 export default function StateLatentVisualizer() {
+  // ---- ORT runtime config (consistent with other pages) ----
+  useOrtRuntime();
+
   // ---- theme ----
   const styles = useUiTheme({ imgW: IMG_W, imgH: IMG_H, scale: SCALE });
+
+  // IMPORTANT: ONE global queue for ORT runs (prevents overlap)
+  const ortQueueRef = useRunQueue();
 
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -81,12 +66,16 @@ export default function StateLatentVisualizer() {
     };
   }, []);
 
-  // Run inference whenever sliders change
+  // Run inference whenever sliders change (keep useEffect, but serialize via queue)
   useEffect(() => {
     let alive = true;
 
     async function runInference() {
       if (!session || !smallCanvasRef.current || !bigCanvasRef.current) return;
+
+      // clear stale error once we’re successfully running again
+      // (optional; remove if you want errors to persist)
+      // setError(null);
 
       const stateArr = new Float32Array(STATE_DIM);
       stateArr[0] = position;
@@ -95,11 +84,18 @@ export default function StateLatentVisualizer() {
       const stateTensor = new ort.Tensor("float32", stateArr, [1, STATE_DIM]);
 
       try {
-        const outputs = await session.run({ state: stateTensor });
-        if (!alive) return;
+        const run = async () => {
+          const outputs = await session.run({ state: stateTensor });
+          if (!alive) return;
 
-        const xRecon = outputs["image"]; // [1, 3, 96, 96]
-        drawCHWFloatToCanvases(xRecon.data, smallCanvasRef.current, bigCanvasRef.current);
+          const xRecon = outputs["image"]; // [1, 3, 96, 96]
+          drawCHWFloatToCanvases(xRecon.data, smallCanvasRef.current, bigCanvasRef.current);
+        };
+
+        // serialize ORT calls to avoid "Session already started" / overlap
+        const q = ortQueueRef?.current;
+        if (q) await q(run);
+        else await run();
       } catch (e) {
         console.error(e);
         if (!alive) return;
@@ -111,7 +107,7 @@ export default function StateLatentVisualizer() {
     return () => {
       alive = false;
     };
-  }, [session, position, angle]);
+  }, [session, position, angle, ortQueueRef]);
 
   const resetState = () => {
     setPosition(0);
@@ -153,12 +149,7 @@ export default function StateLatentVisualizer() {
 
       {error && <div style={styles.err}>Error: {error}</div>}
 
-      <div
-        style={{
-          ...styles.grid,
-          gridTemplateColumns: "1fr 1fr",
-        }}
-      >
+      <div style={{ ...styles.grid, gridTemplateColumns: "repeat(auto-fit, minmax(520px, 1fr))" }}>
         {/* ===================== Controls ===================== */}
         <Card style={styles.card}>
           <CardTitleRow style={styles.titleRow}>
@@ -178,7 +169,6 @@ export default function StateLatentVisualizer() {
           <div style={styles.sliderWrap}>
             <SliderGrid
               styles={styles}
-              // “compact / generic” usage: no header, just sliders
               title={null}
               description={null}
               columns={2}
@@ -197,7 +187,6 @@ export default function StateLatentVisualizer() {
               }}
             />
           </div>
-
         </Card>
 
         {/* ===================== Output ===================== */}
@@ -210,7 +199,8 @@ export default function StateLatentVisualizer() {
                 <div style={styles.smallText}>Output: image (CHW floats → canvas)</div>
               </div>
             </div>
-            <Button variant="danger" styles={styles} onClick={resetState}>
+
+            <Button variant="danger" styles={styles} onClick={resetState} disabled={disabled}>
               Reset State
             </Button>
           </CardTitleRow>
@@ -225,7 +215,6 @@ export default function StateLatentVisualizer() {
             height={IMG_H * SCALE}
             style={styles.canvasFrame}
           />
-
         </Card>
       </div>
     </div>

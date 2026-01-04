@@ -18,6 +18,7 @@ export function useUiTheme({ imgW, imgH, scale } = {}) {
 
     const card = {
       borderRadius: 16,
+      flex: "1 1 320px",
       border: "1px solid rgba(15,23,42,0.08)",
       background: "rgba(255,255,255,0.86)",
       boxShadow: "0 12px 24px rgba(15,23,42,0.05)",
@@ -95,7 +96,8 @@ export function useUiTheme({ imgW, imgH, scale } = {}) {
       background:
         "radial-gradient(450px 220px at 30% 20%, rgba(59,130,246,0.10), rgba(15,23,42,0.02))",
       boxShadow: "0 12px 22px rgba(15,23,42,0.06)",
-      display: "block",
+      display: "flex",
+      justifyContent: "center",
     } : undefined;
 
     const smallText = {
@@ -158,6 +160,14 @@ export function useUiTheme({ imgW, imgH, scale } = {}) {
       gap: 16,
       alignItems: "start",
     };
+
+    const flexGrid = {
+      display: "flex",
+      gap: 16,
+      alignItems: "stretch",
+      flexWrap: "wrap",
+    };
+
 
     const callout = {
       marginTop: 10,
@@ -324,6 +334,7 @@ export function useUiTheme({ imgW, imgH, scale } = {}) {
       h1,
       lead,
       grid,
+      flexGrid,
       card,
       titleRow,
       pill,

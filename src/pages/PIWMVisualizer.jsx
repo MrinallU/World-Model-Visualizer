@@ -1,22 +1,22 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
-import { useOrtRuntime } from "./hooks/useOrtRuntime";
-import { usePiwmModels } from "./hooks/usePiwmModels";
-import { useRunQueue } from "./hooks/useRunQueue";
-import { useVaeDecode } from "./hooks/useVaeDecode";
-import { usePiwmDecode } from "./hooks/usePiwmDecode";
-import { usePiwmControls } from "./hooks/usePiwmControls";
+import { useOrtRuntime } from "../hooks/useOrtRuntime";
+import { usePiwmModels } from "../hooks/usePiwmModels";
+import { useRunQueue } from "../hooks/useRunQueue";
+import { useVaeDecode } from "../hooks/useVaeDecode";
+import { usePiwmDecode } from "../hooks/usePiwmDecode";
+import { usePiwmControls } from "../hooks/usePiwmControls";
 
-import { IMG_H, IMG_W, blitUpscale } from "./utils/canvas";
-import { renderObservationTo96 } from "./utils/render.js";
+import { IMG_H, IMG_W, blitUpscale } from "../utils/canvas";
+import { renderObservationTo96 } from "../utils/render.js";
 
-import { useUiTheme } from "./components/theme";
-import { Card, CardTitleRow } from "./components/Card";
-import { Button } from "./components/Button";
-import { Pill, Dot } from "./components/Pill";
-import { CanvasFrame } from "./components/CanvasFrame";
-import { PageHeader } from "./components/PageHeader";
-import { SliderGrid } from "./components/SliderGrid";
+import { useUiTheme } from "../components/theme";
+import { Card, CardTitleRow } from "../components/Card";
+import { Button } from "../components/Button";
+import { Pill, Dot } from "../components/Pill";
+import { CanvasFrame } from "../components/CanvasFrame";
+import { PageHeader } from "../components/PageHeader";
+import { SliderGrid } from "../components/SliderGrid";
 
 const SCALE = 4;
 
@@ -205,7 +205,7 @@ export default function PIWMVisualizer() {
 
       {error && <div style={styles.err}>Error: {error}</div>}
 
-      <div style={styles.grid}>
+      <div style={styles.flexGrid}>
         {/* ===================== GT ===================== */}
         <Card style={styles.card}>
           <CardTitleRow style={styles.titleRow}>
