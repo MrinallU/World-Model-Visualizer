@@ -230,8 +230,10 @@ export function useUiTheme({ imgW, imgH, scale } = {}) {
       width: 36,
       height: 36,
       borderRadius: 12,
-      background:
-        "linear-gradient(135deg, rgba(59,130,246,0.95), rgba(236,72,153,0.85))",
+      backgroundImage: "url(/logo.png)",
+      backgroundRepeat: "no-repeat",
+      backgroundPosition: "center",
+      backgroundSize: "contain",
       boxShadow: "0 10px 25px rgba(15,23,42,0.12)",
       flex: "0 0 auto",
     };
