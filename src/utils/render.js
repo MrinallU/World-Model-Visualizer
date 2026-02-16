@@ -1,6 +1,6 @@
 
 // src/visualizers/piwm/utils/render.js
-import { IMG_W, IMG_H } from "./canvas";
+import { DEFAULT_IMG_H as IMG_H, DEFAULT_IMG_W as IMG_W } from "./canvas";
 import { LENGTH } from "./physics";
 
 // match your old component constants

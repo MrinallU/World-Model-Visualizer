@@ -1,7 +1,7 @@
 
 // src/visualizers/piwm/hooks/usePiwmControls.js
 import * as ort from "onnxruntime-web";
-import { canvasToCHWFloat, IMG_H, IMG_W } from "../utils/canvas";
+import { canvasToCHWFloat, DEFAULT_IMG_H as IMG_H, DEFAULT_IMG_W as IMG_W } from "../utils/canvas";
 import { transitionModel, learnedTransitionModel } from "../utils/physics";
 import { useEffect } from "react";
 export function usePiwmControls({

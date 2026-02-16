@@ -5,7 +5,7 @@ import { useRunQueue } from "../hooks/useRunQueue";
 import { useVaeDecoderOnly } from "../hooks/useVaeDecoderOnly";
 import { useVaeDecode } from "../hooks/useVaeDecode";
 
-import { IMG_H, IMG_W } from "../utils/canvas";
+import { DEFAULT_IMG_H as IMG_H, DEFAULT_IMG_W as IMG_W } from "../utils/canvas";
 
 import { useUiTheme } from "../components/theme";
 import { Card, CardTitleRow } from "../components/Card";

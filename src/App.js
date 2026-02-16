@@ -1,14 +1,7 @@
-// src/App.jsx
 import React, { useMemo } from "react";
-import {
-  Routes,
-  Route,
-  NavLink,
-  Navigate,
-  useLocation,
-} from "react-router-dom";
+import { Routes, Route, NavLink, Navigate, useLocation } from "react-router-dom";
 
-import VaeLatentVisualizer from "./pages/VaeLatentVisualizer";
+import VaeLatentVisualizer from "./pages/VaeLatentVisualizer.jsx";
 import StateLatentVisualizer from "./pages/StateLatentVisualizer";
 import LatentRolloutVisualizer from "./pages/LatentRolloutVisualizer";
 import SemiInterpretableVisualizer from "./pages/SemiInterpretableVisualizer";
@@ -16,10 +9,13 @@ import PIWMVisualizer from "./pages/PIWMVisualizer";
 import Guide from "./pages/Guide";
 import Home from "./pages/Home";
 
+// ✅ add this
+import LunarLander from "./pages/LunarLander";
+
 import { useUiTheme } from "./components/theme";
 
 function TopNav() {
-  const t = useUiTheme(); // app-level usage; visualizers can still pass imgW/imgH/scale
+  const t = useUiTheme();
   const location = useLocation();
 
   const items = useMemo(() => t.navItems, [t.navItems]);
@@ -32,6 +28,7 @@ function TopNav() {
     if (path.startsWith("/rollout")) return "Latent Rollouts";
     if (path.startsWith("/state")) return "Interpretable State Mapping";
     if (path.startsWith("/semi")) return "Semi-interpretable State Mapping";
+    if (path.startsWith("/lunar")) return "Lunar Lander";
     return "User Guide";
   }, [location.pathname]);
 
@@ -68,9 +65,7 @@ function TopNav() {
                 style={({ isActive }) => ({
                   ...t.linkBase,
                   ...(isActive ? t.linkActive : t.linkInactive),
-                  transform: isActive
-                    ? "translateY(-1px)"
-                    : "translateY(0px)",
+                  transform: isActive ? "translateY(-1px)" : "translateY(0px)",
                 })}
               >
                 <span style={t.dot(it.dot)} aria-hidden />
@@ -78,6 +73,19 @@ function TopNav() {
               </NavLink>
             )
           )}
+
+          {/* ✅ add nav item here if you don't want to touch t.navItems */}
+          <NavLink
+            to="/lunar"
+            style={({ isActive }) => ({
+              ...t.linkBase,
+              ...(isActive ? t.linkActive : t.linkInactive),
+              transform: isActive ? "translateY(-1px)" : "translateY(0px)",
+            })}
+          >
+            <span style={t.dot("#22c55e")} aria-hidden />
+            Lunar
+          </NavLink>
         </div>
       </div>
     </div>
@@ -101,6 +109,8 @@ function App() {
           <Route path="/semi" element={<SemiInterpretableVisualizer />} />
           <Route path="/rollout" element={<LatentRolloutVisualizer />} />
           <Route path="/piwm" element={<PIWMVisualizer />} />
+          <Route path="/lunar" element={<LunarLander />} />
+
           <Route path="*" element={<Navigate to="/guide" replace />} />
         </Routes>
       </div>

@@ -7,7 +7,7 @@ import { useVaeDecode } from "../hooks/useVaeDecode";
 import { usePiwmDecode } from "../hooks/usePiwmDecode";
 import { usePiwmControls } from "../hooks/usePiwmControls";
 
-import { IMG_H, IMG_W, blitUpscale } from "../utils/canvas";
+import { DEFAULT_IMG_H as IMG_H, DEFAULT_IMG_W as IMG_W, blitUpscale } from "../utils/canvas";
 import { renderObservationTo96 } from "../utils/render.js";
 
 import { useUiTheme } from "../components/theme";

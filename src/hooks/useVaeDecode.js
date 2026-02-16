@@ -1,10 +1,17 @@
-
-// src/visualizers/piwm/hooks/useVaeDecode.js
 import { useEffect, useRef } from "react";
 import * as ort from "onnxruntime-web";
 import { drawCHWFloatToCanvases } from "../utils/canvas";
 
-export function useVaeDecode({ vaeDec, latent, queueRef, smallRef, bigRef, onError }) {
+export function useVaeDecode({
+  vaeDec,
+  latent,
+  queueRef,
+  smallRef,
+  bigRef,
+  onError,
+  inputName = "z",
+  outputName = "x_recon",
+}) {
   const tokenRef = useRef(0);
 
   useEffect(() => {
@@ -15,15 +22,17 @@ export function useVaeDecode({ vaeDec, latent, queueRef, smallRef, bigRef, onErr
     queueRef.current(async () => {
       if (token !== tokenRef.current) return;
 
-      const z = new Float32Array(latent.length);
-      for (let i = 0; i < latent.length; i++) z[i] = latent[i];
+      const arr = new Float32Array(latent.length);
+      for (let i = 0; i < latent.length; i++) arr[i] = latent[i];
 
-      const zTensor = new ort.Tensor("float32", z, [1, latent.length]);
-      const out = await vaeDec.run({ z: zTensor });
+      const tensor = new ort.Tensor("float32", arr, [1, latent.length]);
+
+      const out = await vaeDec.run({ [inputName]: tensor });
       if (token !== tokenRef.current) return;
 
-      const xRecon = out["x_recon"];
-      drawCHWFloatToCanvases(xRecon.data, smallRef.current, bigRef.current);
+      const result = out[outputName];
+      drawCHWFloatToCanvases(result.data, smallRef.current, bigRef.current);
     }).catch((e) => onError?.(String(e)));
-  }, [vaeDec, latent, queueRef, smallRef, bigRef, onError]);
+  }, [vaeDec, latent, queueRef, smallRef, bigRef, onError, inputName, outputName]);
 }
+
