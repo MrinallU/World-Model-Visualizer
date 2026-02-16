@@ -1,9 +1,9 @@
-
 // src/visualizers/piwm/hooks/usePiwmControls.js
 import * as ort from "onnxruntime-web";
 import { canvasToCHWFloat, DEFAULT_IMG_H as IMG_H, DEFAULT_IMG_W as IMG_W } from "../utils/canvas";
 import { transitionModel, learnedTransitionModel } from "../utils/physics";
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
+
 export function usePiwmControls({
   vaeEnc,
   piwmEnc,
@@ -26,7 +26,7 @@ export function usePiwmControls({
   NUM_LAYERS,
   HIDDEN_DIM,
 }) {
-  const syncGT = async () => {
+  const syncGT = useCallback(async () => {
     if (!vaeEnc || !piwmEnc || !gtSmallCanvasRef.current) return;
 
     try {
@@ -54,10 +54,9 @@ export function usePiwmControls({
     } catch (e) {
       onError?.(String(e));
     }
-  };
+  }, [vaeEnc, piwmEnc, gtSmallCanvasRef, queueRef, setLatent, setHData, setCData, setPiwmState, onError]);
 
   const stepWithAction = async (actionVal) => {
-    // UI physics updates happen immediately
     setGtState((prev) => transitionModel(prev, actionVal));
     setPiwmState((prev) =>
       learnedTransitionModel(prev, actionVal, {
@@ -101,7 +100,8 @@ export function usePiwmControls({
 
   useEffect(() => {
     syncGT();
-  }, [vaeEnc, piwmEnc]);
+  }, [syncGT]); // ✅ fix
 
   return { syncGT, stepWithAction };
 }
+

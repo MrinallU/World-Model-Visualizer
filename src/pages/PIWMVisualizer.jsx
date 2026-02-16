@@ -13,7 +13,7 @@ import { renderObservationTo96 } from "../utils/render.js";
 import { useUiTheme } from "../components/theme";
 import { Card, CardTitleRow } from "../components/Card";
 import { Button } from "../components/Button";
-import { Pill, Dot } from "../components/Pill";
+import { Dot } from "../components/Pill";
 import { CanvasFrame } from "../components/CanvasFrame";
 import { PageHeader } from "../components/PageHeader";
 import { SliderGrid } from "../components/SliderGrid";
